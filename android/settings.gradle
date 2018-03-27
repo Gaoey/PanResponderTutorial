@@ -1,0 +1,3 @@
+rootProject.name = 'testDragToCornerVideo'
+
+include ':app'
