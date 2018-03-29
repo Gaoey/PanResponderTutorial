@@ -6,7 +6,8 @@ import {
   Animated,
   TouchableOpacity,
   Text,
-  Dimensions
+  Dimensions,
+  Button
 } from "react-native";
 
 const { width, height } = Dimensions.get("window")
@@ -18,8 +19,6 @@ const middleScreenX = width / 2
 const middleScreenY = height / 2
 const maxScreenX = width
 const maxScreenY = height
-console.log('maxX :', maxScreenX, 'maxY: ', maxScreenY)
-console.log('middleX :', middleScreenX, 'middleY: ', middleScreenY)
 const corner = {
   topLeft: { x: 0, y: 0 },
   topRight: { x: width - videoWidth, y: 0 },
@@ -31,9 +30,13 @@ export default class App extends Component {
   constructor() {
     super();
     this.state = {
-      pan: new Animated.ValueXY({ x: width - videoWidth, y: 0 }),
+      width,
+      height,
+      isFullScreen: true,
+      pan: new Animated.ValueXY({ x: 0, y: 0 }),
     }
     this.selectWhichCorner = this.selectWhichCorner.bind(this)
+    this.updateVideoSize = this.updateVideoSize.bind(this)
 
     this._panResponder = PanResponder.create({
       onMoveShouldSetResponderCapture: () => true,
@@ -64,7 +67,6 @@ export default class App extends Component {
     const { pan } = this.state;
     const middleComponentX = (pan.x._value + videoWidth) / 2
     const middleComponentY = (pan.y._value + videoHeight) / 2
-    console.log('middleComponentX : ', middleComponentX, '  ', 'middleComponentX ', middleComponentX)
     // select quadrant
     const QuantdrantOne = (middleComponentX >= minimumScreenX && middleComponentX <= middleScreenX) && (middleComponentY >= minimumScreenY && middleComponentY <= middleScreenY)
     const QuandrantTwo = (middleComponentX >= middleScreenX && middleComponentX <= maxScreenX) && (middleComponentY >= minimumScreenY && middleComponentY <= middleScreenY)
@@ -72,38 +74,66 @@ export default class App extends Component {
     const QuandrantFour = (middleComponentX >= middleScreenX && middleComponentX <= maxScreenX) && (middleComponentY >= middleScreenY && middleComponentY <= maxScreenY)
 
     if (QuantdrantOne) {
-      console.log(1)
       return corner.topLeft
     } else if (QuandrantTwo) {
-      console.log(2)
       return corner.topRight
     } else if (QuandrantThree) {
-      console.log(3)
       return corner.bottomLeft
     } else if (QuandrantFour) {
-      console.log(4)
       return corner.bottomRight
     }
   }
 
+  updateVideoSize() {
+    if (this.state.isFullScreen) {
+      this.state.pan.setValue({ x: width - videoWidth, y: 0 })
+      this.setState({
+        isFullScreen: false,
+        width: videoWidth,
+        height: videoHeight
+      })
+    } else {
+      this.state.pan.setValue({ x: 0, y: 0 })
+      this.setState({
+        isFullScreen: true,
+        width: width,
+        height: height
+      })
+    }
+  }
+
   render() {
-    let { pan } = this.state;
-    let imageStyle = { transform: [{ translateX: pan.x }, { translateY: pan.y }] };
+    let { pan, height, width, isFullScreen } = this.state
+    let imageStyle = { transform: [{ translateX: pan.x }, { translateY: pan.y }] }
     return (
       <View style={styles.container}>
         <TouchableOpacity>
           <Text>Background View</Text>
         </TouchableOpacity>
-
         <View style={styles.absoluteFill}>
-          <Animated.View
-            {...this._panResponder.panHandlers}
-            style={[{
-              height: videoHeight,
-              width: videoWidth
-            }, imageStyle]}>
-            <View style={[StyleSheet.absoluteFill, styles.box]} > Video component here </View>
-          </Animated.View>
+          {
+            isFullScreen
+              ? <View style={[styles.absoluteFill, styles.box]} >
+                  <Button
+                    onPress={() => this.updateVideoSize()}
+                    title={isFullScreen ? "let small screen" : "let full screen"} />
+                  Video component here
+                </View>
+              : <Animated.View
+                {...this._panResponder.panHandlers}
+                style={[{
+                  height,
+                  width
+                }, imageStyle]}>
+                <View style={[styles.absoluteFill, styles.box]} >
+                  <Button
+                    onPress={() => this.updateVideoSize()}
+                    title={isFullScreen ? "let small screen" : "let full screen"}
+                  />
+                  Video component here
+             </View>
+              </Animated.View>
+          }
         </View>
       </View >
     );
@@ -122,6 +152,9 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     position: 'absolute'
+  },
+  normalFill: {
+    flex: 1
   },
   box: {
     backgroundColor: 'black'
